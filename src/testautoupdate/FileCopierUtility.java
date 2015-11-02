@@ -237,6 +237,9 @@ public class FileCopierUtility extends JFrame implements ActionListener, Propert
 
             if ("zip".equals(ext)) {
                 unzip(targetFile);
+                
+                TestAutoUpdate.runECSS();
+                dispose();
             }
         }
     }

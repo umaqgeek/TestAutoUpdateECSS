@@ -5,11 +5,14 @@
  */
 package testautoupdate;
 
+import helper.Func;
+import com.sun.org.apache.xpath.internal.functions.FuncBoolean;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -20,13 +23,54 @@ import java.util.Properties;
 import javax.swing.JOptionPane;
 
 public class AutoUpdate {
+    
+    public static String getData(int stat) {
+        Properties prop = new Properties();
+        InputStream input = null;
+
+        String data = "10.73.32.200";
+        
+        try {
+
+            input = new FileInputStream("data/server.properties");
+
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+            switch (stat) {
+                case 1:
+                    data = prop.getProperty("server");
+                    break;
+                case 2:
+                    data = prop.getProperty("downloadfolder");
+                    break;
+            }
+            System.out.println(data);
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            System.exit(1);
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            }
+        }
+        
+        return data;
+    }
 
     public void update() throws IOException {
         String result = null, 
                 line = null, 
-                path = "G:/CSS/", 
+                path = AutoUpdate.getData(2), 
                 propertiesLocation = "data/version.properties";
-        String ipaddress = "http://localhost:8080/updateServer/";
+        String ipaddress = "http://"+AutoUpdate.getData(1)+"/updateServerECSS/";
         HttpURLConnection connection = (HttpURLConnection) new URL(ipaddress + "testUpdate.jsp").openConnection();
         int intNotUpdate = 0;
 
@@ -74,7 +118,7 @@ public class AutoUpdate {
                 //System.out.println(strClientVer);
                 strUpdateClientVer[i] = strClientVer + "%" + fileName;
 
-                if (client < server) {
+                if (client != server) {
                     String name_jar = fileName;
                     HttpURLConnection connection_jar = (HttpURLConnection) new URL(ipaddress + name_jar).openConnection();
 
@@ -95,6 +139,17 @@ public class AutoUpdate {
 
                         FileProperties fp = new FileProperties();
                         fp.setSource(ipaddress + name_jar);
+                        
+                        String paths[] = path.split(Func.SEPARATOR);
+                        String pa = "";
+                        for (String p: paths) {
+                            pa += p + Func.SEPARATOR;
+                            File targetFolder = new File(pa);
+                            if (!targetFolder.exists()) {
+                                targetFolder.mkdir();
+                            }
+                        }
+                        
                         fp.setTarget(path + name_jar);
 
                         listFp.add(fp);
@@ -124,6 +179,8 @@ public class AutoUpdate {
             if(intNotUpdate == strUpdateClientVer.length)
             {
                 JOptionPane.showMessageDialog(null, "No update");
+                
+                TestAutoUpdate.runECSS();
             }
 
         } else {
